@@ -1,48 +1,52 @@
-import Matter from 'matter-js'
-import React from 'react'
-import { View } from 'react-native'
+import Matter from 'matter-js';
+import React from 'react';
+import { View, Image } from 'react-native';
 
-const Obstacle = props => {
-    const widthBody = props.body.bounds.max.x - props.body.bounds.min.x
-    const heightBody = props.body.bounds.max.y - props.body.bounds.min.y
+const Obstacle = ({ body }) => {
+  const { position, bounds } = body;
+  const { x, y } = position;
+  const { min, max } = bounds;
+  const widthBody = max.x - min.x;
+  const heightBody = max.y - min.y;
 
-    const xBody = props.body.position.x - widthBody / 2
-    const yBody = props.body.position.y - heightBody / 2
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        left: x - widthBody / 2,
+        top: y - heightBody / 2,
+        width: widthBody,
+        height: heightBody,
+      }}
+    >
+      <Image
+        source={require('../assets/obstacle.png')} // Replace with the path to your obstacle image
+        style={{ width: '100%', height: '100%' }}
+        resizeMode="stretch" // Adjust the resizeMode based on your preference
+      />
+    </View>
+  );
+};
 
-    const color = props.color;
-
-    return (
-        <View style={{
-            borderWidth: 20,
-            borderColor: color,
-            borderStyle: 'solid',
-            position: 'absolute',
-            left: xBody,
-            top: yBody,
-            width: widthBody,
-            height: heightBody
-        }} />
-    )
-}
-
-export default (world, label, color, pos, size) => {
-    const initialObstacle = Matter.Bodies.rectangle(
-        pos.x,
-        pos.y,
-        size.width,
-        size.height,
-        {
-            label,
-            isStatic: true
-        }
-    )
-    Matter.World.add(world, initialObstacle)
-
-    return {
-        body: initialObstacle,
-        color,
-        pos,
-        renderer: <Obstacle />
+const createObstacle = (world, label, color, pos, size) => {
+  const obstacle = Matter.Bodies.rectangle(
+    pos.x,
+    pos.y,
+    size.width,
+    size.height,
+    {
+      label,
+      isStatic: true,
     }
-}
+  );
+  Matter.World.add(world, obstacle);
 
+  const obstacleObject = {
+    body: obstacle,
+    renderer: <Obstacle body={obstacle} />,
+  };
+
+  return obstacleObject;
+};
+
+export default createObstacle;

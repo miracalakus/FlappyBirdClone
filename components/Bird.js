@@ -1,8 +1,11 @@
 import React from 'react';
-import { View } from 'react-native';
+import { Image } from 'react-native';
 import Matter from 'matter-js';
 
-const Bird = props => {
+// Import the bird image
+import BirdImage from '../assets/bird1.png';
+
+const Bird = (props) => {
   const { body } = props;
   const widthBody = body.bounds.max.x - body.bounds.min.x;
   const heightBody = body.bounds.max.y - body.bounds.min.y;
@@ -10,14 +13,10 @@ const Bird = props => {
   const xBody = body.position.x - widthBody / 2;
   const yBody = body.position.y - heightBody / 2;
 
-  const color = props.color;
-
   return (
-    <View
+    <Image
+      source={BirdImage} // Use the imported bird image
       style={{
-        borderWidth: 1,
-        borderColor: color,
-        borderStyle: 'solid',
         position: 'absolute',
         left: xBody,
         top: yBody,

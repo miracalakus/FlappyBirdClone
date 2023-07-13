@@ -1,12 +1,12 @@
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar, ImageBackground, TouchableOpacity, Text, View, Alert, StyleSheet } from 'react-native';
+import { GameEngine } from 'react-native-game-engine';
+import { Pedometer } from 'expo-sensors';
 import React, { useState, useEffect, useRef } from 'react';
-import { Text, TouchableOpacity, View, Alert, StyleSheet } from 'react-native';
-import { GameEngine, Matter } from 'react-native-game-engine';
+
 import entities from './entities';
 import Physics from './physics';
-import { Pedometer } from 'expo-sensors';
 
-const ALERT_TIMEOUT = 2000; // 6 seconds
+const ALERT_TIMEOUT = 4000; // 2 seconds
 let alertShown = false;
 
 // Scoreboard component
@@ -22,13 +22,13 @@ const Scoreboard = ({ currentPoints, goal }) => {
 export default function App() {
   const [running, setRunning] = useState(false);
   const [currentPoints, setCurrentPoints] = useState(0);
-  const [PedometerAvailability, setPedometerAvailability] = useState("");
+  const [PedometerAvailability, setPedometerAvailability] = useState('');
   const [stepCount, updateStepCount] = useState(0);
-  const [goal, setGoal] = useState(25); // Set the initial goal value here
+  const [goal, setGoal] = useState(25);
   const [obstacleCollision, setObstacleCollision] = useState(false);
 
   let timeout;
-  let subscription = useRef(null); // Declare the subscription variable using useRef
+  let subscription = useRef(null);
   const gameEngineRef = useRef(null);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function App() {
 
   const subscribe = () => {
     subscription.current = Pedometer.watchStepCount(result => {
-      clearTimeout(timeout); // Clear the previous timeout
+      clearTimeout(timeout);
       updateStepCount(result.steps);
       timeout = setTimeout(showAlert, ALERT_TIMEOUT);
     });
@@ -59,15 +59,15 @@ export default function App() {
 
   const unsubscribe = () => {
     subscription.current && subscription.current.remove();
-    clearTimeout(timeout); // Clear the timeout when unsubscribing
+    clearTimeout(timeout);
   };
 
-  const showAlert = (title, message) => {
+  const showAlert = () => {
     if (!alertShown) {
       alertShown = true;
       Alert.alert(
-        title,
-        message,
+        'Warning',
+        'Keep running or you`ll lose a heart',
         [
           {
             text: 'OK',
@@ -75,12 +75,13 @@ export default function App() {
               alertShown = false;
               setObstacleCollision(false);
             },
+            style: 'default',
           },
-        ]
+        ],
+        { cancelable: false }
       );
     }
   };
-  
 
   const handleGameContainerPress = () => {
     if (!running) {
@@ -90,70 +91,57 @@ export default function App() {
     }
   };
 
-  const showObstacleCollisionAlert = () => {
-    if (!obstacleCollision) {
-      setObstacleCollision(true);
-      Alert.alert(
-        'Obstacle Collision',
-        'You touched an obstacle.',
-        [{ text: 'OK', onPress: () => setObstacleCollision(false) }]
-      );
-    }
-  };
-
   return (
-    <View style={styles.container}>
-      <TouchableOpacity onPress={handleGameContainerPress} style={styles.gameContainer}>
-        <GameEngine
-          ref={gameEngineRef}
-          systems={[Physics]}
-          entities={entities()}
-          running={running}
+    <ImageBackground source={require('./assets/background.png')} style={styles.backgroundImage}>
+      <View style={styles.container}>
+        <TouchableOpacity onPress={handleGameContainerPress} style={styles.gameContainer}>
+          <GameEngine
+            ref={gameEngineRef}
+            systems={[Physics]}
+            entities={entities()}
+            running={running}
+            onEvent={e => {
+              switch (e.type) {
+                case 'game_over':
+                  setRunning(false);
+                  gameEngineRef.current?.stop && gameEngineRef.current.stop();
+                  break;
+                case 'new_point':
+                  setCurrentPoints(currentPoints + 1);
+                  if (currentPoints + 1 >= goal) {
+                    setCurrentPoints(0);
+                    setRunning(false);
+                    gameEngineRef.current.swap(entities());
+                  }
+                  break;
+                case 'obstacle_collision':
+                  if (!obstacleCollision) {
+                    setObstacleCollision(true);
+                    showAlert('Obstacle Collision', 'You touched an obstacle.');
+                  }
+                  break;
+              }
+            }}
+            style={{ flex: 1 }}
+          >
+            <StatusBar style="auto" hidden={true} />
+          </GameEngine>
+        </TouchableOpacity>
 
-      onEvent={(e) => {
-  switch (e.type) {
-    case 'game_over':
-      setRunning(false);
-      gameEngineRef.current?.stop && gameEngineRef.current.stop();
-      break;
-    case 'new_point':
-      setCurrentPoints(currentPoints + 1);
-      if (currentPoints + 1 >= goal) {
-        // Reset the game when the goal is reached
-        setCurrentPoints(0);
-        setRunning(false);
-        gameEngineRef.current.swap(entities());
-      }
-      break;
-    case 'obstacle_collision':
-      if (!obstacleCollision) {
-        setObstacleCollision(true);
-        showAlert('Obstacle Collision', 'You touched an obstacle.');
-      }
-      break;
-  }
-}}
+        <TouchableOpacity onPress={handleGameContainerPress} style={styles.buttonContainer}>
+          <Text style={styles.buttonText}>PLAY</Text>
+        </TouchableOpacity>
 
-          style={{ flex: 1 }}
-        >
-          <StatusBar style="auto" hidden={true} />
-        </GameEngine>
-      </TouchableOpacity>
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoText}>
+            Is pedometer available on the device: {PedometerAvailability}
+          </Text>
+          <Text>{stepCount}</Text>
+        </View>
 
-      <TouchableOpacity onPress={handleGameContainerPress} style={styles.buttonContainer}>
-        <Text style={styles.buttonText}>PLAY</Text>
-      </TouchableOpacity>
-
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoText}>
-          Is pedometer available on the device: {PedometerAvailability}
-        </Text>
-        <Text>{stepCount}</Text>
+        <Scoreboard currentPoints={currentPoints} goal={goal} />
       </View>
-
-      {/* Render the scoreboard */}
-      <Scoreboard currentPoints={currentPoints} goal={goal} />
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -161,6 +149,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover',
   },
   gameContainer: {
     flex: 1,
