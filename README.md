@@ -1,7 +1,5 @@
 # Smombierun
 
-Voor de code moet je in master branch kijken, niet in de main branch waar deze read.me staat!
-
 ## Wat is de Smombierun?
 De Smombierun is zoals je in de naam al hoort een run, maar dan met een gimmick. Denk bijvoorbeeld aan de high heel race, waar mensen een bepaalde afstand afleggen op hakken.  De Smombierun is net zoiets, maar dan met een ander gekkig aspect. Bij de Smombierun gaan deelnemers hardlopen met hun telefoon in hun hand, waar zij spelletjes op moeten doen. Je doet dus twee dingen tegelijkertijd. Onze Smombierun app is bedoeld om de mensen bezig te houden op hun telefoon, en in beweging. 
 
